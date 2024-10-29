@@ -8,9 +8,8 @@ using namespace std;
 //                                                                    JUEGO
 
 class Juego{
-	
-};
 
+};
 
 //-----------------------------------------------------------------------------------
 //                                                                    CAJA
@@ -23,7 +22,7 @@ protected:
 	
 public:
 	Caja();
-	void aparecer();
+	virtual void start();
 			
 };
 
@@ -31,7 +30,7 @@ Caja::Caja (){
 	
 }
 
-void Caja :: aparecer(){
+void Caja :: start(){
 	
 	textcolor(BLUE);
 	cout<<"Teclas Movimiento: ASDW"<<endl;
@@ -68,23 +67,6 @@ void Caja :: aparecer(){
 	cout << "#";  // Esquina inferior derecha
 }
 
-//-------------------------------------------------------------------
-//                                                          PERSONAJE
-
-class Personaje{
-private:
-		int x, y;
-public:
-	Personaje();
-	virtual void nacer();
-	virtual void mover();
-	virtual void dibujar();
-	void borrar();
-	int getX() { return x; }
-	int getY() { return y; }
-	void eliminado();
-	
-};
 
 //-------------------------------------------------------------------
 //                                                          JUGADOR
@@ -97,7 +79,7 @@ private:
 public:
 	
 	Jugador();
-	void aparecer();
+	void start();
 	void mover();
 	int getX() { return x; }
 	int getY() { return y; }
@@ -118,7 +100,7 @@ Jugador::Jugador(){
 	
 }
 
-void Jugador :: aparecer(){
+void Jugador :: start(){
 	// Dibujar el carácter en la posición inicial
 	gotoxy(x, y);
 	//cout << "[ ]";
@@ -175,57 +157,54 @@ void Jugador::mover(){
 		}
 	}
 }
+//-------------------------------------------------------------------
+//                                                          ENEMIGO
 
-//----------------------------------------------------------------------------------------
-//                                                                   ENEMIGO
-
-class Enemigo : public Caja {
-private:
+class Enemigo : public Caja{
+protected:
 	clock_t tempo;
 	clock_t paso;
 	int x, y;
-	
-	
-public:
 	int velocidad;
+	char caracter;
 	int color;
-	int sentido;
-	Enemigo(int velocidad);
-	void mover();
+public:
+	
+	Enemigo(int vel, int col);
+	Enemigo (int vel);
+	virtual ~Enemigo() = default;  // Agregar destructor virtual
+	virtual void nacer();
+	virtual void mover();
+	virtual void dibujar(char caracter);
+	void start();
+	void borrar();
 	int getX() { return x; }
 	int getY() { return y; }
-	void borrar();
-	void start();
-	void renacer();
-	void dibujar();
 	
 };
 
-Enemigo::Enemigo(int velocidad) {
-	sentido=1;
+Enemigo :: Enemigo(int vel, int col){
+	velocidad=vel;
+	color=col;
 	paso=CLOCKS_PER_SEC/velocidad;
 	tempo=clock();
-	color=(rand()%15+1);
-	renacer();
-	dibujar();
+	color=col;
+	nacer();
+	dibujar(caracter);
 }
 
-void Enemigo::dibujar(){
+Enemigo :: Enemigo(int vel){
+	velocidad=vel;
+}
+
+void Enemigo::dibujar(char caracter){
 	gotoxy(x,y);
-	cout<<"X";
+	cout<<caracter;
 }
 
-void Enemigo::renacer(){
-	if(sentido<0){
-		x= x2 - 1;
-		y=rand()%(y2-y1-1)+(y1+1);
-	}else{
-		x= x1 + 1;
-		y=rand()%(y2-y1-1)+(y1+1);
-	}
-	 
-	
-	
+void Enemigo::borrar(){
+	gotoxy(x,y);
+	cout<<' ';
 }
 
 void Enemigo::start(){
@@ -236,33 +215,71 @@ void Enemigo::start(){
 	}	
 }
 
-
-void Enemigo::borrar(){
-	gotoxy(x,y);
-	cout<<' ';
+void Enemigo::mover(){
+	
+}
+void Enemigo::nacer(){
+	
 }
 
-void Enemigo::mover(){
+
+//----------------------------------------------------------------------------------------
+//                                                                   ALIEN
+
+class Alien : public Enemigo {
+private:
+//	clock_t tempo;
+//	clock_t paso;
+	//int x, y;
+	char caracter='X';
+	
+public:
+	int velocidad;
+	int sentido=1;
+	Alien(int vel, int col);
+	void mover();
+	int getX() { return x; }
+	int getY() { return y; }
+	void nacer();
+	
+};
+
+Alien::Alien(int vel, int col) : Enemigo(vel, col) {
+	nacer();
+}
+
+
+void Alien::nacer(){
+	if(sentido<0){
+		x= x2 - 1;
+		y=rand()%(y2-y1-1)+(y1+1);
+	}else{
+		x= x1 + 1;
+		y=rand()%(y2-y1-1)+(y1+1);
+	}	 	
+	
+}
+
+
+void Alien::mover(){
 	if(sentido<0 && x<=x1+1){
 		sentido=1;
-		renacer();
-		dibujar();
+		nacer();
+		Enemigo::dibujar(caracter);
 		
 	}
 	else if(sentido>0 && x>=x2-1){
 		sentido=(-1);
-		renacer();
-		dibujar();
+		nacer();
+		Enemigo::dibujar(caracter);
 	}
 	else{
 		x+=sentido;
 		gotoxy(x,y);
 		textcolor(color);
-		cout << "X";
+		Enemigo::dibujar(caracter);
 		gotoxy(x,y);
-	}
-		
-	
+	}			
 	
 }
 
@@ -270,82 +287,52 @@ void Enemigo::mover(){
 //----------------------------------------------------------------------------
 //                                                                METEORITO
 
-class Meteorito : public Caja {
+class Meteorito : public Enemigo {
 private:
-	clock_t tempo;
-	clock_t paso;
-	int x, y;
+	char caracter='0';
 	
 	
 public:
-	int velocidad;
-	int color;
-	Meteorito(int velocidad);
+	int vel;
+	Meteorito(int velocidad, int color);
 	void mover();
 	int getX() { return x; }
 	int getY() { return y; }
-	void borrar();
-	void start();
-	void renacer();
-	void dibujar();
+	void nacer();
 	
 };
 
-Meteorito::Meteorito(int velocidad) {
-	paso=CLOCKS_PER_SEC/velocidad;
-	tempo=clock();
-	color=WHITE;
-	renacer();
-	dibujar();
+Meteorito::Meteorito(int vel, int col):Enemigo(vel, col) {
+	nacer();
 }
 
-void Meteorito::dibujar(){
-	gotoxy(x,y);
-	cout<<"0";
-}
 
-void Meteorito::renacer(){
+void Meteorito::nacer(){
 	y= y1 + 1;
 	x=rand()%(x2-x1-1)+(x1+1); 
 	
 	
 }
 
-void Meteorito::start(){
-	if (tempo + paso < clock()) {
-		borrar();
-		mover();
-		tempo = clock();
-	}	
-}
-
-
-void Meteorito::borrar(){
-	gotoxy(x,y);
-	cout<<' ';
-}
 
 void Meteorito::mover(){
 	if(y>=y2-1){
-		renacer();
-		dibujar();
+		nacer();
+		Enemigo::dibujar(caracter);
 		
 	}
 	else{
 		y++;
 		gotoxy(x,y);
 		textcolor(color);
-		cout << "0";
+		Enemigo::dibujar(caracter);
 		gotoxy(x,y);
-	}
-	
-	
+	}		
 	
 }
 
 
 //----------------------------------------------------------------------------
-
 //                                                                MAIN
 
 int main(int argc, char *argv[]) {
@@ -354,15 +341,15 @@ int main(int argc, char *argv[]) {
 	
 	
 	Caja Caja1;
-	Caja1.aparecer();
+	Caja1.start();
 	
-	Enemigo E1(15);
-	Enemigo E2(22);
-	Enemigo E3(19);
-	Meteorito M1(10);
+	Alien E1(15, 2);
+	Alien E2(22, 3);
+	Alien E3(19, 4);
+	Meteorito M1(10, 15);
 	
 	Jugador J1;
-	J1.aparecer();
+	J1.start();
 	
 	while(true){
 		J1.mover();
