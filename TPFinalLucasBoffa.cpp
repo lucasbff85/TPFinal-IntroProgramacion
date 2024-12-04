@@ -4,33 +4,27 @@
 #include <ctime>
 using namespace std;
 
-//----------------------------------------------------------------------------------
-//                                                                    JUEGO
-
-class Juego{
-
-};
 
 //-----------------------------------------------------------------------------------
 //                                                                    CAJA
 
 
-class Caja : public Juego {
+class Pantalla {
 protected:
 	//bordes del recuadro
 	int x1 = 5, y1 = 5, x2 = 50, y2 = 25;
 	
 public:
-	Caja();
+	Pantalla();
 	virtual void start();
-			
+	
 };
 
-Caja::Caja (){
+Pantalla::Pantalla (){
 	
 }
 
-void Caja :: start(){
+void Pantalla :: start(){
 	
 	textcolor(BLUE);
 	cout<<"Teclas Movimiento: ASDW"<<endl;
@@ -71,7 +65,7 @@ void Caja :: start(){
 //-------------------------------------------------------------------
 //                                                          JUGADOR
 
-class Jugador : public Caja{
+class Jugador : public Pantalla{
 private:
 	int vidas = 5;
 	int x, y;
@@ -87,8 +81,8 @@ public:
 	void perderVida() { vidas--; }
 	void dibujar();
 	void borrar();
-	
-			
+	void disparar();
+	void nacer();
 };
 
 Jugador::Jugador(){
@@ -97,6 +91,13 @@ Jugador::Jugador(){
 	x = (x1 + x2) / 2;  // Posición inicial del carácter en el centro horizontalmente
 	y = (y1 + y2) / 2;  // Posición inicial del carácter en el centro verticalmente
 	
+	
+}
+
+void Jugador::nacer(){
+	x = (x1 + x2) / 2; 
+	y = (y1 + y2) / 2;
+	start();
 	
 }
 
@@ -128,7 +129,7 @@ void Jugador :: borrar(){
 }
 
 void Jugador::mover(){
-
+	
 	if(getVidas()>0) {
 		if (kbhit()) {  // Detecta si una tecla es presionada
 			int tecla = getch();  // Captura la tecla presionada
@@ -149,6 +150,8 @@ void Jugador::mover(){
 				y--;
 			} else if ((tecla == 's' || tecla == 'S') && y < y2 - 1) {  // Mover abajo
 				y++;
+			} else if(tecla==' '){
+				disparar();
 			}
 			
 			// Dibujar el carácter en la nueva posición
@@ -156,11 +159,16 @@ void Jugador::mover(){
 			dibujar();
 		}
 	}
+	
+}
+
+void Jugador::disparar(){
+	
 }
 //-------------------------------------------------------------------
 //                                                          ENEMIGO
 
-class Enemigo : public Caja{
+class Enemigo : public Pantalla{
 protected:
 	clock_t tempo;
 	clock_t paso;
@@ -228,8 +236,8 @@ void Enemigo::nacer(){
 
 class Alien : public Enemigo {
 private:
-//	clock_t tempo;
-//	clock_t paso;
+	//	clock_t tempo;
+	//	clock_t paso;
 	//int x, y;
 	char caracter='X';
 	
@@ -238,8 +246,6 @@ public:
 	int sentido=1;
 	Alien(int vel, int col);
 	void mover();
-	int getX() { return x; }
-	int getY() { return y; }
 	void nacer();
 	
 };
@@ -296,8 +302,6 @@ public:
 	int vel;
 	Meteorito(int velocidad, int color);
 	void mover();
-	int getX() { return x; }
-	int getY() { return y; }
 	void nacer();
 	
 };
@@ -331,6 +335,59 @@ void Meteorito::mover(){
 	
 }
 
+//------------------------------------------------------------------------------------
+//                                                               JUEGO
+class Juego{
+	Pantalla* P1;
+	Jugador* J1;
+	Alien* A1;
+	Alien* A2;
+	Alien* A3;
+	Meteorito* M1;
+	
+public:
+	Juego();
+	void Loop();
+	bool hayColision(Jugador* player, Enemigo* enemy);
+	void actualizar();
+};
+
+Juego::Juego() {
+	P1 = new Pantalla();
+	J1 = new Jugador();
+	A1 = new Alien(15, 2);
+	A2 = new Alien(22, 3);
+	A3 = new Alien(19, 4);
+	M1 = new Meteorito(10, 15); 
+}
+
+void Juego :: Loop(){
+	clrscr();  // Limpia la pantalla al inicio
+	P1->start();
+	while (J1->getVidas()>0) {
+		actualizar();
+		J1->start();
+		J1->mover();
+		A1->start();
+		A2->start();
+		A3->start();
+		M1->start();
+	}
+}
+
+bool Juego::hayColision(Jugador* player, Enemigo* enemy) {
+	return (player->getX() == enemy->getX() && player->getY() == enemy->getY());
+}
+
+void Juego::actualizar(){
+	if(hayColision(J1, M1)){
+		M1->borrar();
+		J1->borrar();
+		M1->nacer();
+		J1->perderVida();
+		J1->nacer();
+	}
+}
 
 //----------------------------------------------------------------------------
 //                                                                MAIN
@@ -338,27 +395,8 @@ void Meteorito::mover(){
 int main(int argc, char *argv[]) {
 	srand(time(NULL));
 	
-	
-	
-	Caja Caja1;
-	Caja1.start();
-	
-	Alien E1(15, 2);
-	Alien E2(22, 3);
-	Alien E3(19, 4);
-	Meteorito M1(10, 15);
-	
-	Jugador J1;
-	J1.start();
-	
-	while(true){
-		J1.mover();
-		E1.start();
-		E2.start();
-		E3.start();
-		M1.start();
-	}
+	Juego game;
+	game.Loop();
 	
 	return 0;
 }
-
