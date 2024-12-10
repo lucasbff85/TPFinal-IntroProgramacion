@@ -12,23 +12,29 @@ using namespace std;
 class Pantalla {
 protected:
 	//bordes del recuadro
-	int x1 = 5, y1 = 5, x2 = 40, y2 = 20;
-	string mensajes[7] = {"Nice shoot",
-		"Good one",
-		"Great shot!",
-		"Nice hit!",
-		"Fantastic aim!",
-		"Direct hit!",
-		"Well done!"};
-
+	int x1 = 5, y1 = 5, x2 = 35, y2 = 18;
+	string mensajes[10] = {
+		"NICE SHOOT",
+		"GOOD ONE",
+		"GREAT SHOOT!",
+		"NICE HIT!",
+		"FANTASTIC AIM!",
+		"DIRECT HIT!",
+		"WELL DONE!",
+		"BOOOM!",
+		"NICE ONE",
+		"AGREEESIVE!"	
+			
+	};
+	
 	
 public:
-	int puntos = 0;
-	int vidas = 5;
 	Pantalla();
 	virtual void start();
 	void dibujarBordes();
 	void verDatos();
+	void mostrarMensaje();
+	int getx2();
 };
 
 Pantalla::Pantalla (){
@@ -46,8 +52,6 @@ void Pantalla :: start(){
 }
 
 void Pantalla::dibujarBordes(){
-	textcolor(WHITE);
-	
 	//Dibujar líneas horizontales
 	for (int i = x1; i <= x2; i++){
 		gotoxy(i,y1);
@@ -76,25 +80,22 @@ void Pantalla::dibujarBordes(){
 }
 
 
-void Pantalla::verDatos() {
-	textcolor(BLUE);
+
+
+void Pantalla::mostrarMensaje(){
+	int numero=rand()%9;
+	gotoxy(x1+3,y2+3);
+	cout << "                             "; 
+	gotoxy(x1+3,y2+3);
+	textcolor(RED);
+	cout<<mensajes[numero];
 	
-	gotoxy(45, 8);
-	cout << "                        ";  // Limpia la línea completa
-	gotoxy(45, 8);
-	cout << "Puntos: " << puntos;
 	
-	gotoxy(45, 10);
-	cout << "                        ";  // Limpia la línea completa
-	gotoxy(45, 10);
-	cout << "Vidas: ";
-	
-	// Dibujar los asteriscos según el número de vidas
-	for (int i = 0; i < vidas; i++) {
-		cout << "* ";
-	}
 }
 
+int Pantalla::getx2(){
+	return x2;
+}
 
 //-------------------------------------------------------------------
 //                                                          JUGADOR
@@ -165,34 +166,27 @@ void Jugador :: borrar(){
 
 void Jugador::mover(){
 	
-	if(vidas>0) {
-		if (kbhit()) {  // Detecta si una tecla es presionada
-			int tecla = getch();  // Captura la tecla presionada
-			
-			// Borrar el carácter actual
-			//gotoxy(x, y);
-			//cout << " ";
-			//cout<<"  ";
-			
-			borrar();
-			
-			// Mover el caracter según la tecla presionada
-			if ((tecla == 'a' || tecla == 'A') && x > x1 + 2) {  // Mover izquierda
-				x--;
-			} else if ((tecla == 'd' || tecla == 'D') && x < x2 - 2) {  // Mover derecha
-				x++;
-			} else if ((tecla == 'w' || tecla == 'W') && y > y1 + 1) {  // Mover arriba
-				y--;
-			} else if ((tecla == 's' || tecla == 'S') && y < y2 - 1) {  // Mover abajo
-				y++;
-			} else if(tecla==32){
-				disparar();
-			}
-			
-			// Dibujar el carácter en la nueva posición
-			
-			dibujar();
+	if (kbhit()) {  // Detecta si una tecla es presionada
+		int tecla = getch();  // Captura la tecla presionada
+		
+		borrar();
+		
+		// Mover el caracter según la tecla presionada
+		if ((tecla == 'a' || tecla == 'A') && x > x1 + 2) {  // Mover izquierda
+			x--;
+		} else if ((tecla == 'd' || tecla == 'D') && x < x2 - 2) {  // Mover derecha
+			x++;
+		} else if ((tecla == 'w' || tecla == 'W') && y > y1 + 1) {  // Mover arriba
+			y--;
+		} else if ((tecla == 's' || tecla == 'S') && y < y2 - 1) {  // Mover abajo
+			y++;
+		} else if(tecla==32){
+			disparar();
 		}
+		
+		// Dibujar el carácter en la nueva posición
+		
+		dibujar();
 	}
 	
 }
@@ -219,6 +213,7 @@ protected:
 	int velocidad;
 	char caracter;
 	int color;
+	bool isAlien=true;
 public:
 	
 	Enemigo(int vel, int col);
@@ -231,7 +226,8 @@ public:
 	void borrar();
 	int getX() { return x; }
 	int getY() { return y; }
-	
+	bool getAlien();
+	void setAlien(bool valor);
 };
 
 Enemigo :: Enemigo(int vel, int col){
@@ -273,15 +269,20 @@ void Enemigo::nacer(){
 	
 }
 
+bool Enemigo::getAlien(){
+	return isAlien;
+}
+
+void Enemigo::setAlien(bool valor){
+	isAlien=valor;
+}
+
 
 //----------------------------------------------------------------------------------------
 //                                                                   ALIEN
 
 class Alien : public Enemigo {
 private:
-	//	clock_t tempo;
-	//	clock_t paso;
-	//int x, y;
 	char caracter='X';
 	
 public:
@@ -350,6 +351,7 @@ public:
 };
 
 Meteorito::Meteorito(int vel, int col):Enemigo(vel, col) {
+	setAlien(false);
 	nacer();
 }
 
@@ -387,6 +389,8 @@ class Juego{
 	Alien* A2;
 	Alien* A3;
 	Meteorito* M1;
+	int vidas=5;
+	int puntos=0;
 	
 	
 public:
@@ -395,6 +399,8 @@ public:
 	bool hayColision(Jugador* player, Enemigo* enemy);
 	void actualizar();
 	void iniciar();
+	void verDatos();
+	void reiniciar();
 };
 
 Juego::Juego() {
@@ -409,14 +415,15 @@ Juego::Juego() {
 void Juego :: Loop(){
 	clrscr();  // Limpia la pantalla al inicio
 	P1->start();
-	while (P1->vidas>0) {
-		P1->verDatos();
+	while (vidas>0) {
+		verDatos();
+		textcolor(WHITE);
 		P1->dibujarBordes();
-		J1->start();
-		J1->mover();
 		A1->start();
 		A2->start();
 		A3->start();
+		J1->start();
+		J1->mover();
 		M1->start();
 		actualizar();
 		
@@ -424,8 +431,36 @@ void Juego :: Loop(){
 }
 
 bool Juego::hayColision(Jugador* player, Enemigo* enemy) {
-	return (abs(player->getX() - enemy->getX()) <= 1 && abs(player->getY() - enemy->getY()) <= 1);	
-}   //CORREGIR ACA PORQUE SI ES ALIEN QUE NO SE CORRA EN  Y   AL DISPARAR
+	if(enemy->getAlien()){
+		//el contacto con el alien es proximo en coordenadas x
+		return (abs(player->getX() - enemy->getX()) <= 1) && (player->getY() == enemy->getY());
+	}else{
+		//el contacto con meteorito es proximo en x o en y
+		return (abs(player->getX() - enemy->getX()) <= 1 && abs(player->getY() - enemy->getY()) <= 1);
+	}
+	
+}   
+
+void Juego::verDatos() {
+	textcolor(BLUE);
+	int margen = P1->getx2()+5;
+	
+	gotoxy(margen+5, 8);
+	cout << "                        ";  // Limpia la línea completa
+	gotoxy(margen, 8);
+	cout << "Puntos: " << puntos;
+	
+	gotoxy(margen, 10);
+	cout << "                        ";  // Limpia la línea completa
+	gotoxy(margen, 10);
+	cout << "Vidas: ";
+	
+	// Dibujar los asteriscos según el número de vidas
+	for (int i = 0; i < vidas; i++) {
+		cout << "* ";
+	}
+	cout<<"("<<vidas<<")";
+}
 
 void Juego::actualizar(){
 	
@@ -434,55 +469,85 @@ void Juego::actualizar(){
 		M1->borrar();
 		J1->borrar();
 		M1->nacer();
-		P1->vidas--;
+		vidas--;
 		J1->nacer();
+		for(int i=0;i<25;i++){
+			textcolor(BLUE);
+			P1->dibujarBordes();
+			textcolor(YELLOW);
+			P1->dibujarBordes();
+		}
 	}
 	else if(J1->getDisparando()){
 		if(hayColision(J1, A1)){
 			A1->nacer();
-			P1->puntos+=10;
+			puntos+=10;
+			P1->mostrarMensaje();
 		}else if(hayColision(J1, A2)){
 			A2->nacer();
-			P1->puntos+=15;
+			puntos+=15;
+			P1->mostrarMensaje();
 		}else if(hayColision(J1, A3)){
 			A3->nacer();
-			P1->puntos+=20;
+			puntos+=20;
+			P1->mostrarMensaje();
 		}
 		J1->setDisparo(false);	
 	}
 	
 }
 
+void Juego::reiniciar(){
+	vidas=5;
+	puntos=0;
+}
+
 void Juego::iniciar(){
 	clrscr();
-	P1->dibujarBordes();
-	gotoxy(7,9);
+	gotoxy(9,9);
 	textcolor(YELLOW);
 	cout<<"BIENVENIDO A SHOOTER ESPACIAL!!";
-	gotoxy(7,10);
+	gotoxy(9,10);
 	cout<<"Dispara a los aliens que cruzan";
-	gotoxy(7,11);
-	cout<<"la pantalla horizontalmente";
-	gotoxy(7,12);
-	cout<<"Pero cuidado con los meteoritos";
-	gotoxy(7,13);
-	cout<<" que caen desde el cielo...";
-	gotoxy(7,14);
-	cout<<"-------------------------"<<endl;
-	gotoxy(7,15);
-	cout<<"PRESIONA TECLA J PARA COMENZAR";
+	gotoxy(9,11);
+	cout<<"la pantalla horizontalmente,";
+	gotoxy(9,12);
+	cout<<"los más veloces dan más puntos,";
+	gotoxy(9,13);
+	cout<<"pero cuidado con los meteoritos ";
+	gotoxy(9,14);
+	cout<<"que caen desde el cielo..."<<endl;
+	gotoxy(9,15);
+	
+	gotoxy(9,18);
+	cout<<"PRESIONA TECLA 'J' PARA COMENZAR, O 'P' PARA SALIR";
 	int jugar;
 	do{
 		if(kbhit()){
 			jugar=getch();
 			
 			if(jugar == 'J' || jugar == 'j'){
-				Loop();
-				
-				break;	
+				do{
+					reiniciar();
+					Loop();
+					clrscr();
+					textcolor(YELLOW);
+					gotoxy(8,9);
+					cout<<"GAME OVER";
+					gotoxy(9,9);
+					cout<<"PERDISTE TODAS TUS VIDAS!!";
+					gotoxy(9,10);
+					textcolor(YELLOW);
+					cout<<"presiona 'J' para volver a intentar o 'P' para salir ";
+					jugar=getch();
+				}while(jugar=='J'||jugar=='j');
 			}
+			if(jugar=='P' || jugar=='p')
+			   break;
 		}	
-	} while(jugar!='P' || jugar!='j');
+	} while(jugar!='P' || jugar!='p');
+	
+	
 }
 
 //----------------------------------------------------------------------------
