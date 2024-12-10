@@ -6,18 +6,29 @@ using namespace std;
 
 
 //-----------------------------------------------------------------------------------
-//                                                                    CAJA
+//                                                                    PANTALLA
 
 
 class Pantalla {
 protected:
 	//bordes del recuadro
-	int x1 = 5, y1 = 5, x2 = 50, y2 = 25;
+	int x1 = 5, y1 = 5, x2 = 40, y2 = 20;
+	string mensajes[7] = {"Nice shoot",
+		"Good one",
+		"Great shot!",
+		"Nice hit!",
+		"Fantastic aim!",
+		"Direct hit!",
+		"Well done!"};
+
 	
 public:
+	int puntos = 0;
+	int vidas = 5;
 	Pantalla();
 	virtual void start();
-	
+	void dibujarBordes();
+	void verDatos();
 };
 
 Pantalla::Pantalla (){
@@ -31,8 +42,11 @@ void Pantalla :: start(){
 	cout<<" Disparar: SAPACEBAR"<<endl;
 	cout<<" Debes disparar a las X, cuidado con los asteroides!"<<endl;
 	
-	textcolor(WHITE);
 	
+}
+
+void Pantalla::dibujarBordes(){
+	textcolor(WHITE);
 	
 	//Dibujar líneas horizontales
 	for (int i = x1; i <= x2; i++){
@@ -62,14 +76,33 @@ void Pantalla :: start(){
 }
 
 
+void Pantalla::verDatos() {
+	textcolor(BLUE);
+	
+	gotoxy(45, 8);
+	cout << "                        ";  // Limpia la línea completa
+	gotoxy(45, 8);
+	cout << "Puntos: " << puntos;
+	
+	gotoxy(45, 10);
+	cout << "                        ";  // Limpia la línea completa
+	gotoxy(45, 10);
+	cout << "Vidas: ";
+	
+	// Dibujar los asteriscos según el número de vidas
+	for (int i = 0; i < vidas; i++) {
+		cout << "* ";
+	}
+}
+
+
 //-------------------------------------------------------------------
 //                                                          JUGADOR
 
 class Jugador : public Pantalla{
-private:
-	int vidas = 5;
+protected:
 	int x, y;
-	
+	bool disparando = false;
 public:
 	
 	Jugador();
@@ -77,12 +110,14 @@ public:
 	void mover();
 	int getX() { return x; }
 	int getY() { return y; }
-	int getVidas() { return vidas; }
-	void perderVida() { vidas--; }
+	
 	void dibujar();
 	void borrar();
+	void setDisparo(bool valor);
+	bool getDisparando();
 	void disparar();
 	void nacer();
+	
 };
 
 Jugador::Jugador(){
@@ -130,7 +165,7 @@ void Jugador :: borrar(){
 
 void Jugador::mover(){
 	
-	if(getVidas()>0) {
+	if(vidas>0) {
 		if (kbhit()) {  // Detecta si una tecla es presionada
 			int tecla = getch();  // Captura la tecla presionada
 			
@@ -150,7 +185,7 @@ void Jugador::mover(){
 				y--;
 			} else if ((tecla == 's' || tecla == 'S') && y < y2 - 1) {  // Mover abajo
 				y++;
-			} else if(tecla==' '){
+			} else if(tecla==32){
 				disparar();
 			}
 			
@@ -162,8 +197,16 @@ void Jugador::mover(){
 	
 }
 
+void Jugador::setDisparo(bool valor){
+	disparando = valor;
+}
+
+bool Jugador::getDisparando(){
+	return disparando;
+}
+
 void Jugador::disparar(){
-	
+	setDisparo(true);
 }
 //-------------------------------------------------------------------
 //                                                          ENEMIGO
@@ -345,48 +388,101 @@ class Juego{
 	Alien* A3;
 	Meteorito* M1;
 	
+	
 public:
 	Juego();
 	void Loop();
 	bool hayColision(Jugador* player, Enemigo* enemy);
 	void actualizar();
+	void iniciar();
 };
 
 Juego::Juego() {
 	P1 = new Pantalla();
 	J1 = new Jugador();
 	A1 = new Alien(15, 2);
-	A2 = new Alien(22, 3);
-	A3 = new Alien(19, 4);
+	A2 = new Alien(19, 3);
+	A3 = new Alien(22, 4);
 	M1 = new Meteorito(10, 15); 
 }
 
 void Juego :: Loop(){
 	clrscr();  // Limpia la pantalla al inicio
 	P1->start();
-	while (J1->getVidas()>0) {
-		actualizar();
+	while (P1->vidas>0) {
+		P1->verDatos();
+		P1->dibujarBordes();
 		J1->start();
 		J1->mover();
 		A1->start();
 		A2->start();
 		A3->start();
 		M1->start();
+		actualizar();
+		
 	}
 }
 
 bool Juego::hayColision(Jugador* player, Enemigo* enemy) {
-	return (player->getX() == enemy->getX() && player->getY() == enemy->getY());
-}
+	return (abs(player->getX() - enemy->getX()) <= 1 && abs(player->getY() - enemy->getY()) <= 1);	
+}   //CORREGIR ACA PORQUE SI ES ALIEN QUE NO SE CORRA EN  Y   AL DISPARAR
 
 void Juego::actualizar(){
+	
+	
 	if(hayColision(J1, M1)){
 		M1->borrar();
 		J1->borrar();
 		M1->nacer();
-		J1->perderVida();
+		P1->vidas--;
 		J1->nacer();
 	}
+	else if(J1->getDisparando()){
+		if(hayColision(J1, A1)){
+			A1->nacer();
+			P1->puntos+=10;
+		}else if(hayColision(J1, A2)){
+			A2->nacer();
+			P1->puntos+=15;
+		}else if(hayColision(J1, A3)){
+			A3->nacer();
+			P1->puntos+=20;
+		}
+		J1->setDisparo(false);	
+	}
+	
+}
+
+void Juego::iniciar(){
+	clrscr();
+	P1->dibujarBordes();
+	gotoxy(7,9);
+	textcolor(YELLOW);
+	cout<<"BIENVENIDO A SHOOTER ESPACIAL!!";
+	gotoxy(7,10);
+	cout<<"Dispara a los aliens que cruzan";
+	gotoxy(7,11);
+	cout<<"la pantalla horizontalmente";
+	gotoxy(7,12);
+	cout<<"Pero cuidado con los meteoritos";
+	gotoxy(7,13);
+	cout<<" que caen desde el cielo...";
+	gotoxy(7,14);
+	cout<<"-------------------------"<<endl;
+	gotoxy(7,15);
+	cout<<"PRESIONA TECLA J PARA COMENZAR";
+	int jugar;
+	do{
+		if(kbhit()){
+			jugar=getch();
+			
+			if(jugar == 'J' || jugar == 'j'){
+				Loop();
+				
+				break;	
+			}
+		}	
+	} while(jugar!='P' || jugar!='j');
 }
 
 //----------------------------------------------------------------------------
@@ -396,7 +492,7 @@ int main(int argc, char *argv[]) {
 	srand(time(NULL));
 	
 	Juego game;
-	game.Loop();
+	game.iniciar();
 	
 	return 0;
 }
